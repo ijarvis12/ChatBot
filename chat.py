@@ -21,10 +21,7 @@ def analyze(query):
 		database.append(query2)
 		print('tell me more...')
 
-def inp():
-	query = input("> ")
-	analyze(query)
-
 print('hello')
 while True:
-	inp()
+	query = input("> ")
+	analyze(query)
