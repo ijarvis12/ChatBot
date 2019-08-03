@@ -2,8 +2,6 @@
 
 from string import punctuation
 
-database = []
-
 def analyze(query):
 	query = query.lower()
 	query2 = ''
@@ -12,13 +10,17 @@ def analyze(query):
 			pass
 		else:
 			query2 += s
-	if query2 in database:
-		try:
-			print(database[database.index(query2)+1])
-		except:
-			pass
+	if query2[:4] == "what":
+	    print("what do you think?")
+	elif query2[:5] == "where":
+	    print("where do you think?")
+	elif query2[:4] == "when":
+	    print("when do you think?")
+	elif query2[:3] == "why":
+	    print("why do you think?")
+	elif query2[:3] == "how":
+	    print("how do you think?")
 	else:
-		database.append(query2)
 		print('tell me more...')
 
 print('hello')
