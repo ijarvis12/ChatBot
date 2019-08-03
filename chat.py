@@ -5,11 +5,13 @@ from string import punctuation
 def analyze(query):
 	query = query.lower()
 	query2 = ''
+	
 	for s in query:
 		if s in punctuation:
 			pass
 		else:
 			query2 += s
+	
 	if query2[:4] == "what":
 	    print("what do you think?")
 	elif query2[:5] == "where":
@@ -22,6 +24,8 @@ def analyze(query):
 	    print("how do you think?")
 	else:
 		print('tell me more...')
+
+#main program
 
 print('hello')
 while True:
