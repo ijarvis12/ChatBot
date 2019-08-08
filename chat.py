@@ -1,33 +1,42 @@
 #!/usr/bin/env python3
 
 from string import punctuation
+from random import seed,randint
+
+database = [ ["hello",[0,1]],
+			 ["hi",[0,1]] ]
 
 def analyze(query):
+#   nicer input
 	query = query.lower()
+
+#   forget punctuation
 	query2 = ''
-	
 	for s in query:
 		if s in punctuation:
 			pass
 		else:
 			query2 += s
 	
-	if query2[:4] == "what":
-	    print("what do you think?")
-	elif query2[:5] == "where":
-	    print("where do you think?")
-	elif query2[:4] == "when":
-	    print("when do you think?")
-	elif query2[:3] == "why":
-	    print("why do you think?")
-	elif query2[:3] == "how":
-	    print("how do you think?")
+#   loop through database for response
+	for data in database:
+#       if in the database, print response
+		if query2 is data[0]:
+#           random response from given choices in database	        
+			outnum = data[1][randint(0,len(data[1]))-1]
+			out = database[outnum][0]
+			print(out)
+			
+#   else append query with random response
 	else:
-		print('tell me more...')
+		database.append([query2,[randint(0,len(database))-1]])
+        
+
 
 #main program
 
-print('hello')
+seed()
+print("print 'hello' or 'hi' to start")
 while True:
 	query = input("> ")
 	analyze(query)
