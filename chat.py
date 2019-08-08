@@ -1,44 +1,70 @@
 #!/usr/bin/env python3
 
-from string import punctuation
+from string import whitespace,punctuation
 from random import seed,randint
 
+#databases of responses, prepopulated
 database = [ ["hello",[0,1]],
 			 ["hi",[0,1]] ]
 
-def analyze(query):
+def analyze(query,previ):
 #   nicer input
 	query = query.lower()
-
-#   forget punctuation
+	query = query.strip()
+	query = " ".join(query.split())
+	
+#	forget whitespace (except single whitespaces)
 	query2 = ''
 	for s in query:
-		if s in punctuation:
-			pass
-		else:
-			query2 += s
+		if s not in whitespace.strip():
+			query2  += s
+
+#   forget punctuation
+	query3 = ''
+	for s in query2:
+		if s not in punctuation:
+			query3 += s
+
+#	cleanup
+	query = query3
+	del query2
+	del query3
 	
 #   loop through database for response
-	for data in database:
+	for i,data in enumerate(database):
 #       if in the database, print response
-		if query2 == data[0]:
+		if query == data[0]:
+			if previ not in data[1]:
+				database[i][1].append(previ)
+#			set var for next query iteration
+			previ = i
 #           random response from given choices in database	        
 			outnum = data[1][randint(0,len(data[1]))-1]
 			out = database[outnum][0]
 			print(out)
 			break
 			
-#   else append query to database with random response
+#   else append query to database with previous response
 	else:
 		print("i don't know...")
-		database.append([query2,[randint(0,len(database))-1]])
-        
+		database.append([query,[previ]])
+		
+#		set var for next query iteration
+		previ = len(database)-1
+
+
+	return previ
+
+
+
 
 
 #main program
 
 seed()
 print("print 'hello' or 'hi' to start")
+query = input("> ")
+previ = analyze(query,0)
 while True:
 	query = input("> ")
-	analyze(query)
+	previ = analyze(query,previ)
