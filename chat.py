@@ -34,8 +34,10 @@ def analyze(query,previ):
 	for i,data in enumerate(database):
 #       if in the database, print response
 		if query == data[0]:
-			if previ not in data[1]:
+			if len(data[1]) < 48:
 				database[i][1].append(previ)
+			else:
+				database[i][1][i%48] = previ
 #			set var for next query iteration
 			previ = i
 #           random response from given choices in database	        
@@ -46,7 +48,6 @@ def analyze(query,previ):
 			
 #   else append query to database with previous response
 	else:
-		print("i don't know...")
 		database.append([query,[previ]])
 		
 #		set var for next query iteration
