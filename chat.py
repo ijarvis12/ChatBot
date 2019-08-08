@@ -21,14 +21,16 @@ def analyze(query):
 #   loop through database for response
 	for data in database:
 #       if in the database, print response
-		if query2 is data[0]:
+		if query2 == data[0]:
 #           random response from given choices in database	        
 			outnum = data[1][randint(0,len(data[1]))-1]
 			out = database[outnum][0]
 			print(out)
+			break
 			
-#   else append query with random response
+#   else append query to database with random response
 	else:
+		print("i don't know...")
 		database.append([query2,[randint(0,len(database))-1]])
         
 
