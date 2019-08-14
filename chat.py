@@ -7,7 +7,8 @@ import pyttsx3
 # databases of responses, prepopulated (add more as we go)
 #			  repsonse,previ,nexti
 database = [ ["hello",[0,1],[0,1]],
-			 ["hi",[0,1],[0,1]] ]
+			 ["hi",[0,1],[0,1]],
+			 ["",[0,1],[0,1]] ]
 
 def cleanup(query):
 #	nicer input
@@ -45,19 +46,10 @@ def analyze(query,previ):
 			else:
 				database[i][1][i%48] = previ
 
-#			set next query iteration for the previous
-			if len(data[2]) < 48:
-				database[previ][2].append(i)
-			else:
-				database[previ][2][previ%48] = i
-
-#			set var for next query iteration
-			previ = i
-
 #			if next responses exist...
 			if len(data[2]) > 0:
 #				...get random response num from given database choices
-				outnum = data[2][randint(0,len(data[2]))-1]
+				outnum = data[2][randint(0,len(data[2])-1)]
 
 #				get reponse
 				out = database[outnum][0]
@@ -69,6 +61,19 @@ def analyze(query,previ):
 				engine.say(out)
 				engine.runAndWait()
 
+#				set next query num to database
+				for j,ndata in enumerate(database):
+						if out == ndata[0]:
+							previ = j
+							if len(database[i][2]) < 48:
+								database[i][2].append(j)
+							else:
+								database[i][2][i%48] = j
+						break
+
+#			set var for next query iteration
+			previ = i
+
 #			break out of for loop
 			break
 			
@@ -77,11 +82,16 @@ def analyze(query,previ):
 #		else append query to database with previous response
 		database.append([query,[previ],[]])
 
-#		add next query response to previous
-		database[previ][2].append(len(database)-1)
+#		put this response as the next of the previous 
+		nextresponse = database[previ][2]
+		bottom = len(database)-1
+		if len(nextresponse) < 48:
+			nextresponse.append(bottom)
+		else:
+			nextresponse[randint(0,47)] = bottom
 
 #		set var for next query iteration
-		previ = len(database)-1
+		previ = bottom
 
 	return previ
 
