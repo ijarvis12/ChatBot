@@ -83,12 +83,11 @@ def analyze(query,previ):
 		database.append([query,[previ],[]])
 
 #		put this response as the next of the previous 
-		nextresponse = database[previ][2]
 		bottom = len(database)-1
-		if len(nextresponse) < 48:
-			nextresponse.append(bottom)
+		if len(database[previ][2]) < 48:
+			database[previ][2].append(bottom)
 		else:
-			nextresponse[randint(0,47)] = bottom
+			database[previ][2][randint(0,47)] = bottom
 
 #		set var for next query iteration
 		previ = bottom
