@@ -98,6 +98,8 @@ previ = 0
 while True:
 #	get user input
 	query = input("> ")
+	if query == "":
+		continue
 #	cleanup the query
 	query = cleanup(query)
 #	check for exit command
