@@ -7,8 +7,7 @@ import pyttsx3
 # databases of responses, prepopulated (add more as we go)
 #			  repsonse,previ,nexti
 database = [ ["hello",[0,1],[0,1]],
-			 ["hi",[0,1],[0,1]],
-			 ["",[0,1],[0,1]] ]
+			 ["hi",[0,1],[0,1]] ]
 
 def cleanup(query):
 #	nicer input
@@ -62,14 +61,12 @@ def analyze(query,previ):
 				engine.runAndWait()
 
 #				set next query num to database
-				for j,ndata in enumerate(database):
-						if out == ndata[0]:
-							previ = j
-							if len(database[i][2]) < 48:
-								database[i][2].append(j)
-							else:
-								database[i][2][i%48] = j
-						break
+				previ = outnum
+				if len(database[i][2]) < 48:
+					database[i][2].append(outnum)
+				else:
+					database[i][2][i%48] = outnum
+				break
 
 #			set var for next query iteration
 			previ = i
@@ -122,15 +119,19 @@ previ = 0
 
 #main loop
 while True:
+
 #	get user input
 	query = input("> ")
 	if query == "":
 		continue
+
 #	cleanup the query
 	query = cleanup(query)
+
 #	check for exit command
 	if query == 'exit':
-		break
+		exit()
+
 #	else analyze query and set index for next loop iteration
 	previ = analyze(query,previ)
 
