@@ -4,10 +4,49 @@ from string import whitespace,punctuation
 from random import seed,randint
 import pyttsx3
 
-# databases of responses, prepopulated (add more as we go)
+# database of responses, prepopulated (add more as we go)
 #     db = [ [repsonse,[previdx],[nextidx]], ... ]
-database = [ ["hello",[0,1],[0,1]],
-			 ["hi",[0,1],[0,1]] ]
+database = []
+
+def extractdbinfo():
+#	open db file
+	try:
+		file = open("chatdb.dat",'r')
+	except:
+		file = open("chatdb.dat",'x')
+		file.write("['hello', [0], [0]]\n")
+		file.close()
+		file = open("chatdb.dat",'r')
+
+#	extract data
+	for line in file:
+
+#		extraction list from data line in file
+		extract = line[1:-2].split(", ")
+
+#		extract response
+		response = extract[0].strip("'")
+
+#		extract previous response indices
+		pindices = extract[1].strip("[]").split(",")
+		previdcs = []
+		for indx in pindices:
+			previdcs.append(int(indx))
+
+#		extract next response indices
+		nindices = extract[2].strip("[]").split(",")
+		nextidcs = []
+		if nindices[0] != '':
+			for indx in nindices:
+				nextidcs.append(int(indx))
+
+#		add to db in memory
+		database.append([response,previdcs,nextidcs])
+
+#	close db file
+	file.close()
+
+
 
 def cleanup(query):
 #	nicer input
@@ -80,17 +119,17 @@ def analyze(query,previdx):
 #		else append query to database with previous response index
 		database.append([query,[previdx],[]])
 
-#		put this response as the next response index of the previous response
-		currentidx = len(database)-1
+#		set the new index as the next response index of the previous response
+		newidx = len(database)-1
 		if len(database[previdx][2]) < 48:
-			database[previdx][2].append(currentidx)
+			database[previdx][2].append(newidx)
 		else:
-			database[previdx][2][randint(0,47)] = currentidx
+			database[previdx][2][randint(0,47)] = newidx
 
-#		set current response index to next response index
-		nextidx = currentidx
+#		set new index to next response index
+		nextidx = newidx
 
-#	return next response index (previous response index next iteration)
+#	return next response index (tuns into previous response index in main loop)
 	return nextidx
 
 
@@ -104,6 +143,7 @@ def analyze(query,previdx):
 #starting necesseties
 seed()
 engine = pyttsx3.init()
+extractdbinfo()
 
 #set speaking rate
 engine.setProperty('rate', 160)
@@ -134,7 +174,18 @@ while True:
 
 #	check for exit command
 	if query == 'exit' or query == 'quit':
+
+#		write database to file for future
+		file = open("chatdb.dat",'w')
+		for data in database:
+			file.write(str(data)+"\n")
+
+		#close db file
+		file.close()
+
+#		quit
 		exit()
+
 
 #	else analyze query and set index for next loop iteration
 	previdx = analyze(query,previdx)
