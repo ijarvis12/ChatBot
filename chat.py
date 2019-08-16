@@ -33,24 +33,27 @@ def cleanup(query):
 
 def analyze(query,previdx):	
 
+#	initialize next response index
+	nextidx = 0
+
 #	loop through database for response
-	for i,data in enumerate(database):
+	for currentidx,data in enumerate(database):
 
 #		find if in the database
 		if query == data[0]:
 
-#			set previous query index to current query
+#			set previous response index to current response
 			if len(data[1]) < 48:
-				database[i][1].append(previdx)
+				database[currentidx][1].append(previdx)
 			else:
-				database[i][1][randint(0,47)] = previdx
+				database[currentidx][1][randint(0,47)] = previdx
 
-#			set current query index for next index
-			nextidx = i
+#			set current response index for next index
+			nextidx = currentidx
 
 #			if next responses exist...
 			if len(data[2]) > 0:
-#				...get random response num from given database choices
+#				...get random response index from given database choices
 				nextidx = data[2][randint(0,len(data[2])-1)]
 
 #				get reponse
@@ -63,11 +66,11 @@ def analyze(query,previdx):
 				engine.say(out)
 				engine.runAndWait()
 
-#				set next query index to current query
-				if len(database[i][2]) < 48:
-					database[i][2].append(nextidx)
+#				set next response index to current response
+				if len(database[currentidx][2]) < 48:
+					database[currentidx][2].append(nextidx)
 				else:
-					database[i][2][randint(0,47)] = nextidx
+					database[currentidx][2][randint(0,47)] = nextidx
 
 #			break out of for loop
 			break
@@ -77,16 +80,17 @@ def analyze(query,previdx):
 #		else append query to database with previous response index
 		database.append([query,[previdx],[]])
 
-#		put this response as the next query index of the previous query 
+#		put this response as the next response index of the previous response
 		currentidx = len(database)-1
 		if len(database[previdx][2]) < 48:
 			database[previdx][2].append(currentidx)
 		else:
 			database[previdx][2][randint(0,47)] = currentidx
 
-#		set current query index for next query index
+#		set current response index to next response index
 		nextidx = currentidx
 
+#	return next response index (previous response index next iteration)
 	return nextidx
 
 
