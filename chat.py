@@ -5,7 +5,7 @@ from random import seed,randint
 import pyttsx3
 
 # databases of responses, prepopulated (add more as we go)
-#			  repsonse,previ,nexti
+#     db = [ [repsonse,[previdx],[nextidx]], ... ]
 database = [ ["hello",[0,1],[0,1]],
 			 ["hi",[0,1],[0,1]] ]
 
@@ -15,13 +15,13 @@ def cleanup(query):
 	query = query.strip()
 	query = " ".join(query.split())
 	
-#	forget whitespace (except single whitespaces)
+#	remove whitespace (except single whitespaces)
 	query2 = ''
 	for s in query:
 		if s not in whitespace.strip():
 			query2  += s
 
-#	forget punctuation
+#	remove punctuation
 	query3 = ''
 	for s in query2:
 		if s not in punctuation:
@@ -31,7 +31,7 @@ def cleanup(query):
 
 
 
-def analyze(query,previ):	
+def analyze(query,previdx):	
 
 #	loop through database for response
 	for i,data in enumerate(database):
@@ -41,12 +41,12 @@ def analyze(query,previ):
 
 #			set previous query iteration
 			if len(data[1]) < 48:
-				database[i][1].append(previ)
+				database[i][1].append(previdx)
 			else:
-				database[i][1][i%48] = previ
+				database[i][1][randint(0,47)] = previdx
 
-#			set previous query for next query iteration
-			previ = i
+#			set previous index for next query iteration
+			previdx = i
 
 #			if next responses exist...
 			if len(data[2]) > 0:
@@ -63,12 +63,14 @@ def analyze(query,previ):
 				engine.say(out)
 				engine.runAndWait()
 
+#				set previous index for next query iteration
+				previdx = outnum
+
 #				set next query num to database
-				previ = outnum
 				if len(database[i][2]) < 48:
 					database[i][2].append(outnum)
 				else:
-					database[i][2][i%48] = outnum
+					database[i][2][randint(0,47)] = outnum
 
 #			break out of for loop
 			break
@@ -76,19 +78,19 @@ def analyze(query,previ):
 	else:
 
 #		else append query to database with previous response
-		database.append([query,[previ],[]])
+		database.append([query,[previdx],[]])
 
 #		put this response as the next of the previous 
 		bottom = len(database)-1
-		if len(database[previ][2]) < 48:
-			database[previ][2].append(bottom)
+		if len(database[previdx][2]) < 48:
+			database[previdx][2].append(bottom)
 		else:
-			database[previ][2][randint(0,47)] = bottom
+			database[previdx][2][randint(0,47)] = bottom
 
-#		set var for next query iteration
-		previ = bottom
+#		set previous index for next query iteration
+		previdx = bottom
 
-	return previ
+	return previdx
 
 
 
@@ -114,7 +116,7 @@ engine.setProperty('voice', voices[3].id)
 print("hello")
 engine.say("hello")
 engine.runAndWait()
-previ = 0
+previdx = 0
 
 #main loop
 while True:
@@ -134,5 +136,5 @@ while True:
 		exit()
 
 #	else analyze query and set index for next loop iteration
-	previ = analyze(query,previ)
+	previdx = analyze(query,previdx)
 
