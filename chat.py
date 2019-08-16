@@ -45,6 +45,9 @@ def analyze(query,previ):
 			else:
 				database[i][1][i%48] = previ
 
+#			set previous query for next query iteration
+			previ = i
+
 #			if next responses exist...
 			if len(data[2]) > 0:
 #				...get random response num from given database choices
@@ -66,10 +69,6 @@ def analyze(query,previ):
 					database[i][2].append(outnum)
 				else:
 					database[i][2][i%48] = outnum
-				break
-
-#			set var for next query iteration
-			previ = i
 
 #			break out of for loop
 			break
@@ -122,6 +121,8 @@ while True:
 
 #	get user input
 	query = input("> ")
+
+#	if no user input, continue
 	if query == "":
 		continue
 
