@@ -39,22 +39,22 @@ def analyze(query,previdx):
 #		find if in the database
 		if query == data[0]:
 
-#			set previous query iteration
+#			set previous query index to current query
 			if len(data[1]) < 48:
 				database[i][1].append(previdx)
 			else:
 				database[i][1][randint(0,47)] = previdx
 
-#			set previous index for next query iteration
-			previdx = i
+#			set current query index for next index
+			nextidx = i
 
 #			if next responses exist...
 			if len(data[2]) > 0:
 #				...get random response num from given database choices
-				outnum = data[2][randint(0,len(data[2])-1)]
+				nextidx = data[2][randint(0,len(data[2])-1)]
 
 #				get reponse
-				out = database[outnum][0]
+				out = database[nextidx][0]
 
 #				print response to terminal
 				print(out)
@@ -63,34 +63,31 @@ def analyze(query,previdx):
 				engine.say(out)
 				engine.runAndWait()
 
-#				set previous index for next query iteration
-				previdx = outnum
-
-#				set next query num to database
+#				set next query index to current query
 				if len(database[i][2]) < 48:
-					database[i][2].append(outnum)
+					database[i][2].append(nextidx)
 				else:
-					database[i][2][randint(0,47)] = outnum
+					database[i][2][randint(0,47)] = nextidx
 
 #			break out of for loop
 			break
 			
 	else:
 
-#		else append query to database with previous response
+#		else append query to database with previous response index
 		database.append([query,[previdx],[]])
 
-#		put this response as the next of the previous 
-		bottom = len(database)-1
+#		put this response as the next query index of the previous query 
+		currentidx = len(database)-1
 		if len(database[previdx][2]) < 48:
-			database[previdx][2].append(bottom)
+			database[previdx][2].append(currentidx)
 		else:
-			database[previdx][2][randint(0,47)] = bottom
+			database[previdx][2][randint(0,47)] = currentidx
 
-#		set previous index for next query iteration
-		previdx = bottom
+#		set current query index for next query index
+		nextidx = currentidx
 
-	return previdx
+	return nextidx
 
 
 
@@ -132,7 +129,7 @@ while True:
 	query = cleanup(query)
 
 #	check for exit command
-	if query == 'exit':
+	if query == 'exit' or query == 'quit':
 		exit()
 
 #	else analyze query and set index for next loop iteration
