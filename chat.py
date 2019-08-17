@@ -10,7 +10,7 @@ import sqlite3
 #example = [ ["hello",[0,1],[0,1]] ]
 
 def scrub(table_name):
-    return ''.join( char for char in table_name if char.isalnum() )
+    return '_'.join( char for char in table_name if char.isalnum() )
 
 #create the db and/or connect
 def createDBifnone():
