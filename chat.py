@@ -4,11 +4,16 @@ from random import seed,randint
 import pyttsx3
 import sqlite3
 
-# database of responses, prepopulated (add more as we go)
-#     db = [ [repsonse,[previdx],[nextidx]], ... ]
-#example = [ ["hello",[0,1],[0,1]] ]
-
-
+# main database table
+# responses
+# id | response
+#
+# supporting database tables
+# [query]_prev
+# id | previdx
+#
+# [query]_next
+# id | nextidx
 
 #turn query into table name
 def turn(query):
@@ -83,20 +88,20 @@ def searchdisplayadd(query,previdx):
 		currentidx = int(c.fetchone()[0])
 
 #		add previous response index to current response table
-		c.execute("SELECT COUNT(id) FROM '%s'" % (table+"_prev"))
+		c.execute("SELECT COUNT(id) FROM {}".format(table+"_prev"))
 		idnum = int(c.fetchone()[0])
-		c.execute("INSERT INTO '%s' VALUES ('%s','%s')" % ((table+"_prev"),str(idnum),str(previdx)))
+		c.execute("INSERT INTO {} VALUES (?,?)".format(table+"_prev"), (idnum,previdx))
 
 #		set current response index for next index
 		nextidx = currentidx
 
 #		if next responses exist...
 		try:
-			c.execute("SELECT nextidx FROM '%s'" % (table+"_next"))
-			options = c.fetchall()
+			c.execute("SELECT nextidx FROM {}".format(table+"_next"))
+			options = c.fetchall()[0]
 
 #			...get random response index from given database choices
-			nextidx = int(options[0][randint(0,len(options[0])-1)])
+			nextidx = int(options[randint(0,len(options)-1)])
 			c.execute("SELECT * FROM responses WHERE id=?", (nextidx,))
 			out = str(c.fetchone()[1])
 
@@ -108,9 +113,9 @@ def searchdisplayadd(query,previdx):
 			engine.runAndWait()
 
 #			set next response index to current response
-			c.execute("SELECT COUNT(id) FROM '%s'" % (table+"_next"))
+			c.execute("SELECT COUNT(id) FROM {}".format(table+"_next"))
 			idnum = int(c.fetchone()[0])
-			c.execute("INSERT INTO '%s' VALUES ('%s','%s')" % ((table+"_next"),str(idnum),str(nextidx)))
+			c.execute("INSERT INTO {} VALUES (?,?)".format(table+"_next"), (idnum,nextidx))
 
 #		...otherwise skip
 		except:
@@ -121,20 +126,20 @@ def searchdisplayadd(query,previdx):
 		c.execute('SELECT COUNT(id) FROM responses')
 		idnum = int(c.fetchone()[0])
 		c.execute('INSERT INTO responses VALUES (?,?)', (idnum,query[0]))
-		c.execute('''CREATE TABLE '%s'
-		(id INT PRIMARY KEY NOT NULL, previdx INT NOT NULL)''' % (table+"_prev"))
-		c.execute("INSERT INTO '%s' VALUES (0,'%s')" % ((table+"_prev"),str(previdx)))
-		c.execute('''CREATE TABLE '%s'
-		(id INT PRIMARY KEY NOT NULL, nextidx INT)''' % (table+"_next"))
+		c.execute('''CREATE TABLE {}
+		(id INT PRIMARY KEY NOT NULL, previdx INT NOT NULL)'''.format(table+"_prev"))
+		c.execute("INSERT INTO {} VALUES (0,?)".format(table+"_prev"), (previdx,))
+		c.execute('''CREATE TABLE {}
+		(id INT PRIMARY KEY NOT NULL, nextidx INT)'''.format(table+"_next"))
 
 #		set the new index as the next response index of the previous response
 		newidx = idnum
 		c.execute('SELECT * FROM responses WHERE id=?', (previdx,))
-		response = str(c.fetchone()[1])
-		response = turn(response)
-		c.execute("SELECT COUNT(id) FROM '%s'" % (response+"_next"))
+		prevresponse = str(c.fetchone()[1])
+		prevresponse = turn(prevresponse)
+		c.execute("SELECT COUNT(id) FROM {}".format(prevresponse+"_next"))
 		idnum = int(c.fetchone()[0])
-		c.execute("INSERT INTO '%s' VALUES ('%s','%s')" % ((response+"_next"),str(idnum),str(newidx)))
+		c.execute("INSERT INTO {} VALUES (?,?)".format(response+"_next"), (idnum,newidx))
 
 #		set new index to next response index
 		nextidx = newidx
