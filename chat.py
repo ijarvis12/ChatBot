@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from string import whitespace,punctuation
 from random import seed,randint
 import pyttsx3
 import sqlite3
@@ -9,8 +8,13 @@ import sqlite3
 #     db = [ [repsonse,[previdx],[nextidx]], ... ]
 #example = [ ["hello",[0,1],[0,1]] ]
 
-def scrub(table_name):
-    return '_'.join( char for char in table_name if char.isalnum() )
+
+
+#turn query into table name
+def turn(query):
+	return "_".join(query.split(" "))
+
+
 
 #create the db and/or connect
 def createDBifnone():
@@ -51,19 +55,16 @@ def cleanup(query):
 	query = query.strip()
 	query = " ".join(query.split())
 	
-#	remove whitespace (except single whitespaces)
+#	only keep alpha numerics
 	query2 = ''
-	for s in query:
-		if s not in whitespace.strip():
-			query2  += s
+	for char in query:
+		if char.isalnum():
+			query2 += char
+		elif char == ' ':
+			query2 += char
 
-#	remove punctuation
-	query3 = ''
-	for s in query2:
-		if s not in punctuation:
-			query3 += s
+	return query2
 
-	return query3
 
 
 #query search, display, add to db
@@ -73,7 +74,7 @@ def searchdisplayadd(query,previdx):
 	nextidx = 0
 
 #	table name and query tuple
-	table = scrub(query)
+	table = turn(query)
 	query = (query,)
 
 #	try searching and getting current query index
@@ -84,18 +85,18 @@ def searchdisplayadd(query,previdx):
 #		add previous response index to current response table
 		c.execute("SELECT COUNT(id) FROM '%s'" % (table+"_prev"))
 		idnum = int(c.fetchone()[0])
-		c.execute("UPDATE '%s' SET id='%d', previdx='%d'" % ((table+"_prev"),idnum,previdx))
+		c.execute("INSERT INTO '%s' VALUES ('%s','%s')" % ((table+"_prev"),str(idnum),str(previdx)))
 
 #		set current response index for next index
 		nextidx = currentidx
 
 #		if next responses exist...
 		try:
-			c.execute("SELECT nextidx from '%s'" % (table+"_next"))
+			c.execute("SELECT nextidx FROM '%s'" % (table+"_next"))
 			options = c.fetchall()
 
 #			...get random response index from given database choices
-			nextidx = int(options[randint(0,len(options)-1)])
+			nextidx = int(options[0][randint(0,len(options[0])-1)])
 			c.execute("SELECT * FROM responses WHERE id=?", (nextidx,))
 			out = str(c.fetchone()[1])
 
@@ -109,7 +110,7 @@ def searchdisplayadd(query,previdx):
 #			set next response index to current response
 			c.execute("SELECT COUNT(id) FROM '%s'" % (table+"_next"))
 			idnum = int(c.fetchone()[0])
-			c.execute("UPDATE '%s' SET id='%d', nextidx='%d'" % ((table+"_next"),idnum,nextidx))
+			c.execute("INSERT INTO '%s' VALUES ('%s','%s')" % ((table+"_next"),str(idnum),str(nextidx)))
 
 #		...otherwise skip
 		except:
@@ -119,10 +120,10 @@ def searchdisplayadd(query,previdx):
 	except:
 		c.execute('SELECT COUNT(id) FROM responses')
 		idnum = int(c.fetchone()[0])
-		c.execute('UPDATE responses SET id=?, response=?', (idnum,query[0]))
+		c.execute('INSERT INTO responses VALUES (?,?)', (idnum,query[0]))
 		c.execute('''CREATE TABLE '%s'
 		(id INT PRIMARY KEY NOT NULL, previdx INT NOT NULL)''' % (table+"_prev"))
-		c.execute("INSERT INTO '%s' VALUES (0,'%s')" % ((table+"_prev"),str(previdx))) # bug makes it have to be string
+		c.execute("INSERT INTO '%s' VALUES (0,'%s')" % ((table+"_prev"),str(previdx)))
 		c.execute('''CREATE TABLE '%s'
 		(id INT PRIMARY KEY NOT NULL, nextidx INT)''' % (table+"_next"))
 
@@ -130,9 +131,10 @@ def searchdisplayadd(query,previdx):
 		newidx = idnum
 		c.execute('SELECT * FROM responses WHERE id=?', (previdx,))
 		response = str(c.fetchone()[1])
+		response = turn(response)
 		c.execute("SELECT COUNT(id) FROM '%s'" % (response+"_next"))
 		idnum = int(c.fetchone()[0])
-		c.execute("UPDATE '%s' SET id='%d', nextidx='%d'" % ((response+"_next"),idnum,newidx))
+		c.execute("INSERT INTO '%s' VALUES ('%s','%s')" % ((response+"_next"),str(idnum),str(newidx)))
 
 #		set new index to next response index
 		nextidx = newidx
