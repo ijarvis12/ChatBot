@@ -3,52 +3,49 @@
 from string import whitespace,punctuation
 from random import seed,randint
 import pyttsx3
+import sqlite3
 
 # database of responses, prepopulated (add more as we go)
 #     db = [ [repsonse,[previdx],[nextidx]], ... ]
-database = []
+#example = [ ["hello",[0,1],[0,1]] ]
 
-def extractdbinfo():
-#	open db file
+def scrub(table_name):
+    return ''.join( char for char in table_name if char.isalnum() )
+
+#create the db and/or connect
+def createDBifnone():
+
+#	try to connect to db and retrieve entry
 	try:
-		file = open("chatdb.dat",'r')
+		c.execute('SELECT * FROM responses LIMIT 1')
+
 	except:
-		file = open("chatdb.dat",'x')
-		file.write("['hello', [0], [0]]\n")
-		file.close()
-		file = open("chatdb.dat",'r')
 
-#	extract data
-	for line in file:
+#		create responses table and populate with one entry
+		c.execute('''CREATE TABLE responses
+		(id INT PRIMARY KEY NOT NULL, response VARCHAR(255) NOT NULL)''')
+		c.execute("INSERT INTO responses VALUES (0,'hello')")
 
-#		extraction list from data line in file
-		extract = line[1:-2].split(", ")
+#		create previous response index table for first response
+		c.execute('''CREATE TABLE hello_prev
+		(id INT PRIMARY KEY NOT NULL, previdx INT NOT NULL)''')
+		c.execute("INSERT INTO hello_prev VALUES (0,0)")
 
-#		extract response
-		response = extract[0].strip("'")
+#		create next response index table for first response
+		c.execute('''CREATE TABLE hello_next
+		(id INT PRIMARY KEY NOT NULL, nextidx INT)''')
+		c.execute("INSERT INTO hello_next VALUES (0,0)")
 
-#		extract previous response indices
-		pindices = extract[1].strip("[]").split(",")
-		previdcs = []
-		for indx in pindices:
-			previdcs.append(int(indx))
+#		commit changes
+		conn.commit()
 
-#		extract next response indices
-		nindices = extract[2].strip("[]").split(",")
-		nextidcs = []
-		if nindices[0] != '':
-			for indx in nindices:
-				nextidcs.append(int(indx))
-
-#		add to db in memory
-		database.append([response,previdcs,nextidcs])
-
-#	close db file
-	file.close()
+		return
 
 
 
+#cleanup the query
 def cleanup(query):
+
 #	nicer input
 	query = query.lower()
 	query = query.strip()
@@ -69,68 +66,80 @@ def cleanup(query):
 	return query3
 
 
-
-def analyze(query,previdx):	
+#query search, display, add to db
+def searchdisplayadd(query,previdx):	
 
 #	initialize next response index
 	nextidx = 0
 
-#	loop through database for response
-	for currentidx,data in enumerate(database):
+#	table name and query tuple
+	table = scrub(query)
+	query = (query,)
 
-#		find if in the database
-		if query == data[0]:
+#	try searching and getting current query index
+	try:
+		c.execute('SELECT * FROM responses WHERE response=?', query)
+		currentidx = int(c.fetchone()[0])
 
-#			set previous response index to current response
-			if len(data[1]) < 48:
-				database[currentidx][1].append(previdx)
-			else:
-				database[currentidx][1][randint(0,47)] = previdx
+#		add previous response index to current response table
+		c.execute("SELECT COUNT(id) FROM '%s'" % (table+"_prev"))
+		idnum = int(c.fetchone()[0])
+		c.execute("UPDATE '%s' SET id='%d', previdx='%d'" % ((table+"_prev"),idnum,previdx))
 
-#			set current response index for next index
-			nextidx = currentidx
+#		set current response index for next index
+		nextidx = currentidx
 
-#			if next responses exist...
-			if len(data[2]) > 0:
-#				...get random response index from given database choices
-				nextidx = data[2][randint(0,len(data[2])-1)]
+#		if next responses exist...
+		try:
+			c.execute("SELECT nextidx from '%s'" % (table+"_next"))
+			options = c.fetchall()
 
-#				get reponse
-				out = database[nextidx][0]
+#			...get random response index from given database choices
+			nextidx = int(options[randint(0,len(options)-1)])
+			c.execute("SELECT * FROM responses WHERE id=?", (nextidx,))
+			out = str(c.fetchone()[1])
 
-#				print response to terminal
-				print(out)
+#			print response
+			print(out)
 
-#				speak response to speakers
-				engine.say(out)
-				engine.runAndWait()
+#			speak response
+			engine.say(out)
+			engine.runAndWait()
 
-#				set next response index to current response
-				if len(database[currentidx][2]) < 48:
-					database[currentidx][2].append(nextidx)
-				else:
-					database[currentidx][2][randint(0,47)] = nextidx
+#			set next response index to current response
+			c.execute("SELECT COUNT(id) FROM '%s'" % (table+"_next"))
+			idnum = int(c.fetchone()[0])
+			c.execute("UPDATE '%s' SET id='%d', nextidx='%d'" % ((table+"_next"),idnum,nextidx))
 
-#			break out of for loop
-			break
-			
-	else:
+#		...otherwise skip
+		except:
+			pass
 
-#		else append query to database with previous response index
-		database.append([query,[previdx],[]])
+#	if no entry add it to dbs
+	except:
+		c.execute('SELECT COUNT(id) FROM responses')
+		idnum = int(c.fetchone()[0])
+		c.execute('UPDATE responses SET id=?, response=?', (idnum,query[0]))
+		c.execute('''CREATE TABLE '%s'
+		(id INT PRIMARY KEY NOT NULL, previdx INT NOT NULL)''' % (table+"_prev"))
+		c.execute("INSERT INTO '%s' VALUES (0,'%s')" % ((table+"_prev"),str(previdx))) # bug makes it have to be string
+		c.execute('''CREATE TABLE '%s'
+		(id INT PRIMARY KEY NOT NULL, nextidx INT)''' % (table+"_next"))
 
 #		set the new index as the next response index of the previous response
-		newidx = len(database)-1
-		if len(database[previdx][2]) < 48:
-			database[previdx][2].append(newidx)
-		else:
-			database[previdx][2][randint(0,47)] = newidx
+		newidx = idnum
+		c.execute('SELECT * FROM responses WHERE id=?', (previdx,))
+		response = str(c.fetchone()[1])
+		c.execute("SELECT COUNT(id) FROM '%s'" % (response+"_next"))
+		idnum = int(c.fetchone()[0])
+		c.execute("UPDATE '%s' SET id='%d', nextidx='%d'" % ((response+"_next"),idnum,newidx))
 
 #		set new index to next response index
 		nextidx = newidx
 
 #	return next response index (tuns into previous response index in main loop)
 	return nextidx
+
 
 
 
@@ -143,7 +152,9 @@ def analyze(query,previdx):
 #starting necesseties
 seed()
 engine = pyttsx3.init()
-extractdbinfo()
+conn = sqlite3.connect('chat.db')
+c = conn.cursor()
+createDBifnone()
 
 #set speaking rate
 engine.setProperty('rate', 160)
@@ -175,18 +186,16 @@ while True:
 #	check for exit command
 	if query == 'exit' or query == 'quit':
 
-#		write database to file for future
-		file = open("chatdb.dat",'w')
-		for data in database:
-			file.write(str(data)+"\n")
-
-		#close db file
-		file.close()
+#		close db connection
+		c.close()
+		conn.close()
 
 #		quit
 		exit()
 
-
 #	else analyze query and set index for next loop iteration
-	previdx = analyze(query,previdx)
+	previdx = searchdisplayadd(query,previdx)
+
+#	save changes to dbs
+	conn.commit()
 
