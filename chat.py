@@ -10,10 +10,10 @@ import sqlite3
 #
 # supporting database tables
 # [query]_prev
-# id | previdx
+# previdx
 #
 # [query]_next
-# id | nextidx
+# nextidx
 
 #turn query into table name
 def turn(query):
@@ -36,14 +36,12 @@ def createDBifnone():
 		c.execute("INSERT INTO responses VALUES (0,'hello')")
 
 #		create previous response index table for first response
-		c.execute('''CREATE TABLE hello_prev
-		(id INT PRIMARY KEY NOT NULL, previdx INT NOT NULL)''')
-		c.execute("INSERT INTO hello_prev VALUES (0,0)")
+		c.execute('CREATE TABLE hello_prev(previdx INT NOT NULL)')
+		c.execute("INSERT INTO hello_prev VALUES (0)")
 
 #		create next response index table for first response
-		c.execute('''CREATE TABLE hello_next
-		(id INT PRIMARY KEY NOT NULL, nextidx INT)''')
-		c.execute("INSERT INTO hello_next VALUES (0,0)")
+		c.execute('CREATE TABLE hello_next(nextidx INT)')
+		c.execute("INSERT INTO hello_next VALUES (0)")
 
 #		commit changes
 		conn.commit()
@@ -88,20 +86,18 @@ def searchdisplayadd(query,previdx):
 		currentidx = int(c.fetchone()[0])
 
 #		add previous response index to current response table
-		c.execute("SELECT COUNT(id) FROM {}".format(table+"_prev"))
-		idnum = int(c.fetchone()[0])
-		c.execute("INSERT INTO {} VALUES (?,?)".format(table+"_prev"), (idnum,previdx))
+		c.execute("INSERT INTO {} VALUES (?)".format(table+"_prev"),(previdx,))
 
 #		set current response index for next index
 		nextidx = currentidx
 
 #		if next responses exist...
 		try:
-			c.execute("SELECT nextidx FROM {}".format(table+"_next"))
-			options = c.fetchall()[0]
+			c.execute("SELECT * FROM {}".format(table+"_next"))
+			options = c.fetchall()
 
 #			...get random response index from given database choices
-			nextidx = int(options[randint(0,len(options)-1)])
+			nextidx = int(options[randint(0,len(options)-1)][0])
 			c.execute("SELECT * FROM responses WHERE id=?", (nextidx,))
 			out = str(c.fetchone()[1])
 
@@ -113,9 +109,7 @@ def searchdisplayadd(query,previdx):
 			engine.runAndWait()
 
 #			set next response index to current response
-			c.execute("SELECT COUNT(id) FROM {}".format(table+"_next"))
-			idnum = int(c.fetchone()[0])
-			c.execute("INSERT INTO {} VALUES (?,?)".format(table+"_next"), (idnum,nextidx))
+			c.execute("INSERT INTO {} VALUES (?)".format(table+"_next"),(nextidx,))
 
 #		...otherwise skip
 		except:
@@ -126,20 +120,16 @@ def searchdisplayadd(query,previdx):
 		c.execute('SELECT COUNT(id) FROM responses')
 		idnum = int(c.fetchone()[0])
 		c.execute('INSERT INTO responses VALUES (?,?)', (idnum,query[0]))
-		c.execute('''CREATE TABLE {}
-		(id INT PRIMARY KEY NOT NULL, previdx INT NOT NULL)'''.format(table+"_prev"))
-		c.execute("INSERT INTO {} VALUES (0,?)".format(table+"_prev"), (previdx,))
-		c.execute('''CREATE TABLE {}
-		(id INT PRIMARY KEY NOT NULL, nextidx INT)'''.format(table+"_next"))
+		c.execute('CREATE TABLE {}(previdx INT NOT NULL)'.format(table+"_prev"))
+		c.execute("INSERT INTO {} VALUES (?)".format(table+"_prev"), (previdx,))
+		c.execute('CREATE TABLE {}(nextidx INT)'.format(table+"_next"))
 
 #		set the new index as the next response index of the previous response
 		newidx = idnum
 		c.execute('SELECT * FROM responses WHERE id=?', (previdx,))
 		prevresponse = str(c.fetchone()[1])
 		prevresponse = turn(prevresponse)
-		c.execute("SELECT COUNT(id) FROM {}".format(prevresponse+"_next"))
-		idnum = int(c.fetchone()[0])
-		c.execute("INSERT INTO {} VALUES (?,?)".format(response+"_next"), (idnum,newidx))
+		c.execute("INSERT INTO {} VALUES (?)".format(prevresponse+"_next"),(newidx,))
 
 #		set new index to next response index
 		nextidx = newidx
