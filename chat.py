@@ -104,69 +104,15 @@ def searchdisplayadd(query,previdx):
 #			set next response index to current query next table
 			c.execute("INSERT INTO {} VALUES (?)".format(table+"_next"),(nextidx,))
 
+#			save to db
+			conn.commit()
+
+
 #		...otherwise if next repsonse doesn't exist
 		except:
 
-#			get user input
-			query2 = input("> ")
-
-#			if no user input, continue
-			if query == "":
-				return nextidx
-
-#			cleanup the query
-			query2 = cleanup(query2)
-
-#			get table name
-			nexttable = turn(query2)
-
-#			and try to get query from response and set index
-			try:
-				c.execute('SELECT * FROM responses WHERE repsonse=?', (query2,))
-				nextidx = idnum = int(c.fetchone()[0])
-
-#				insert this second query into previous query's next table
-				c.execute("INSERT INTO {} VALUES (?)".format(table+"_next"),(idnum,))
-
-#				and then get next response from second query and output that
-#				(if next response doesn't exist, we start over)
-				try:
-					c.execute("SELECT * FROM {}".format(nexttable+"_next"))
-					options = c.fetchall()
-					
-				except:
-					return nextidx
-
-#				get random response index from given database choices
-				nextidx = int(options[randint(0,len(options)-1)][0])
-				c.execute("SELECT * FROM responses WHERE id=?", (nextidx,))
-				out = str(c.fetchone()[1])
-
-#				print response
-				print(out)
-	
-#				speak response
-				engine.say(out)
-				engine.runAndWait()
-
-#				set next response index to second query next table
-				c.execute("INSERT INTO {} VALUES (?)".format(nexttable+"_next"),(nextidx,))
-
-
-#			or else we're dealing with another new query
-			except:
-
-#				so add it to the responses table
-				c.execute('SELECT COUNT(id) FROM responses')
-				idnum = int(c.fetchone()[0])
-				c.execute('INSERT INTO responses VALUES (?,?)', (idnum,query2))
-
-#				then add its index to the current (now previous) query
-				c.execute("INSERT INTO {} VALUES (?)".format(table+"_next"),(idnum,))
-
-#				then create supporting table and set next index
-				c.execute('CREATE TABLE {}(nextidx INT)'.format(nexttable+"_next"))
-				nextidx = idnum
+#			use recursion
+			nextidx = mainloop(nextidx)
 
 
 #	if no entry add it to db
@@ -182,12 +128,46 @@ def searchdisplayadd(query,previdx):
 		prevtable = turn(prevresponse)
 		c.execute("INSERT INTO {} VALUES (?)".format(prevtable+"_next"),(idnum,))
 
+#		save changes
+		conn.commit()
+
 #		set new index to next response index
 		nextidx = idnum
 
-#	return next response index (tuns into previous response index in main loop)
+#	return next response index
 	return nextidx
 
+
+
+
+#main loop
+def mainloop(previdx):
+
+#	get user input
+	query = input("> ")
+
+#	if no user input, continue
+	if query == "":
+		return
+
+#	cleanup the query
+	query = cleanup(query)
+
+#	check for exit command
+	if query == 'exit' or query == 'quit':
+
+#		close db connection
+		c.close()
+		conn.close()
+
+#		quit
+		exit()
+
+#	else analyze query and set index for next loop iteration
+	nextidx = searchdisplayadd(query,previdx)
+
+#	reuturn next index	
+	return nextidx
 
 
 
@@ -221,29 +201,5 @@ previdx = 0
 #main loop
 while True:
 
-#	get user input
-	query = input("> ")
-
-#	if no user input, continue
-	if query == "":
-		continue
-
-#	cleanup the query
-	query = cleanup(query)
-
-#	check for exit command
-	if query == 'exit' or query == 'quit':
-
-#		close db connection
-		c.close()
-		conn.close()
-
-#		quit
-		exit()
-
-#	else analyze query and set index for next loop iteration
-	previdx = searchdisplayadd(query,previdx)
-
-#	save changes to dbs
-	conn.commit()
+	previdx = mainloop(previdx)
 
