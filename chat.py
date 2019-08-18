@@ -14,6 +14,12 @@ import sqlite3
 
 #turn query into table name
 def turn(query):
+
+#	can't have sql table start with a number
+	if query[0] in "1234567890":
+		query = " " + query
+
+#	return the table name as the query with the spaces turned to underscores
 	return "_".join(query.split(" "))
 
 
@@ -59,9 +65,6 @@ def cleanup(query):
 		elif char == ' ':
 			query2 += char
 
-	if query2[0] in "1234567890":
-		query2 = " " + query2
-
 	return query2
 
 
@@ -74,11 +77,10 @@ def searchdisplayadd(query,previdx):
 
 #	table name and query tuple
 	table = turn(query)
-	query = (query,)
 
 #	try searching and getting current query index
 	try:
-		c.execute('SELECT * FROM responses WHERE response=?', query)
+		c.execute('SELECT * FROM responses WHERE response=?', (query,))
 		currentidx = int(c.fetchone()[0])
 
 #		set current response index for next index
@@ -119,7 +121,7 @@ def searchdisplayadd(query,previdx):
 	except:
 		c.execute('SELECT COUNT(id) FROM responses')
 		idnum = int(c.fetchone()[0])
-		c.execute('INSERT INTO responses VALUES (?,?)', (idnum,query[0]))
+		c.execute('INSERT INTO responses VALUES (?,?)', (idnum,query))
 		c.execute('CREATE TABLE {}(nextidx INT)'.format(table+"_next"))
 
 #		set the index as the next response index of the previous response
