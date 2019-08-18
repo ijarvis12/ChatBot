@@ -150,7 +150,7 @@ def mainloop(previdx):
 
 #	if no user input, continue
 	if query == "":
-		return
+		return previdx
 
 #	cleanup the query
 	query = cleanup(query)
