@@ -168,7 +168,7 @@ def mainloop(previdx):
 #	else analyze query and set index for next loop iteration
 	nextidx = searchdisplayadd(query,previdx)
 
-#	reuturn next index	
+#	return next index
 	return nextidx
 
 
@@ -191,8 +191,8 @@ engine.setProperty('rate', 160)
 
 #get details of current voice
 voices = engine.getProperty('voices')
-#set voice
-engine.setProperty('voice', voices[3].id)
+#set voice (number 16 is en-us)
+engine.setProperty('voice', voices[16].id)
 
 #greeting, and off we go!
 print("hello")
