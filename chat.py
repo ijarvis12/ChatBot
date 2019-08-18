@@ -66,6 +66,9 @@ def cleanup(query):
 		elif char == ' ':
 			query2 += char
 
+	if query2[0] in "1234567890":
+		query2 = " " + query2
+
 	return query2
 
 
