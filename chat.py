@@ -8,10 +8,7 @@ import sqlite3
 # responses
 # id | response
 #
-# supporting database tables
-# [query]_prev
-# previdx
-#
+# supporting database table
 # [query]_next
 # nextidx
 
@@ -34,10 +31,6 @@ def createDBifnone():
 		c.execute('''CREATE TABLE responses
 		(id INT PRIMARY KEY NOT NULL, response VARCHAR(255) NOT NULL)''')
 		c.execute("INSERT INTO responses VALUES (0,'hello')")
-
-#		create previous response index table for first response
-		c.execute('CREATE TABLE hello_prev(previdx INT NOT NULL)')
-		c.execute("INSERT INTO hello_prev VALUES (0)")
 
 #		create next response index table for first response
 		c.execute('CREATE TABLE hello_next(nextidx INT)')
@@ -88,9 +81,6 @@ def searchdisplayadd(query,previdx):
 		c.execute('SELECT * FROM responses WHERE response=?', query)
 		currentidx = int(c.fetchone()[0])
 
-#		add previous response index to current response table
-		c.execute("INSERT INTO {} VALUES (?)".format(table+"_prev"),(previdx,))
-
 #		set current response index for next index
 		nextidx = currentidx
 
@@ -111,7 +101,7 @@ def searchdisplayadd(query,previdx):
 			engine.say(out)
 			engine.runAndWait()
 
-#			set next response index to current response
+#			set next response index to current query next table
 			c.execute("INSERT INTO {} VALUES (?)".format(table+"_next"),(nextidx,))
 
 #		...otherwise if next repsonse doesn't exist
@@ -130,7 +120,7 @@ def searchdisplayadd(query,previdx):
 #			get table name
 			nexttable = turn(query2)
 
-#			and try to get query from responses and set index
+#			and try to get query from response and set index
 			try:
 				c.execute('SELECT * FROM responses WHERE repsonse=?', (query2,))
 				nextidx = idnum = int(c.fetchone()[0])
@@ -159,8 +149,9 @@ def searchdisplayadd(query,previdx):
 				engine.say(out)
 				engine.runAndWait()
 
-#				set next response index to current response
+#				set next response index to second query next table
 				c.execute("INSERT INTO {} VALUES (?)".format(nexttable+"_next"),(nextidx,))
+
 
 #			or else we're dealing with another new query
 			except:
@@ -173,9 +164,7 @@ def searchdisplayadd(query,previdx):
 #				then add its index to the current (now previous) query
 				c.execute("INSERT INTO {} VALUES (?)".format(table+"_next"),(idnum,))
 
-#				then create the tables and set next index
-				c.execute('CREATE TABLE {}(previdx INT NOT NULL)'.format(nexttable+"_prev"))
-				c.execute("INSERT INTO {} VALUES (?)".format(nexttable+"_prev"), (currentidx,))
+#				then create supporting table and set next index
 				c.execute('CREATE TABLE {}(nextidx INT)'.format(nexttable+"_next"))
 				nextidx = idnum
 
@@ -185,8 +174,6 @@ def searchdisplayadd(query,previdx):
 		c.execute('SELECT COUNT(id) FROM responses')
 		idnum = int(c.fetchone()[0])
 		c.execute('INSERT INTO responses VALUES (?,?)', (idnum,query[0]))
-		c.execute('CREATE TABLE {}(previdx INT NOT NULL)'.format(table+"_prev"))
-		c.execute("INSERT INTO {} VALUES (?)".format(table+"_prev"), (previdx,))
 		c.execute('CREATE TABLE {}(nextidx INT)'.format(table+"_next"))
 
 #		set the index as the next response index of the previous response
