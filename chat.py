@@ -8,7 +8,7 @@ import sqlite3
 # responses
 # id | response
 #
-# supporting database table
+# supporting database tables
 # [query]_next
 # nextidx
 
@@ -24,7 +24,7 @@ def turn(query):
 
 
 
-#create the db and/or connect
+#create the db if it doesn't exist
 def createDBifnone():
 
 #	try to connect to db and retrieve entry
@@ -148,7 +148,7 @@ def mainloop(previdx):
 #	get user input
 	query = input("> ")
 
-#	if no user input, continue
+#	if no user input, return to while loop with same index set
 	if query == "":
 		return previdx
 
